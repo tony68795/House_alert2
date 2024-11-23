@@ -1,3 +1,4 @@
+import asyncio
 import requests
 from bs4 import BeautifulSoup
 import time
@@ -18,7 +19,6 @@ def get_new_listings():
     # De woningen bevinden zich in een div met de class 'listing-search-item'
     listings = soup.find_all('a', class_='listing-search-item__link listing-search-item__link--title')
 
-
     # Maak een lijst van de woningtitels en links
     new_listings = []
     for listing in listings:
@@ -26,18 +26,15 @@ def get_new_listings():
         link = "https://www.pararius.nl" + listing.get('href')  # Access href attribute directly
         new_listings.append(f"{title}: {link}")
      
-    
     return new_listings
 
-
-
 # Functie om een Telegram-bericht te sturen
-def send_telegram_message(message):
+async def send_telegram_message(message):
     bot = Bot(token=TELEGRAM_API_TOKEN)
-    bot.send_message(chat_id=CHAT_ID, text=message)
+    await bot.send_message(chat_id=CHAT_ID, text=message)
 
 # Functie om nieuwe woningen te controleren en berichten te sturen
-def check_for_new_listings():
+async def check_for_new_listings():
     previous_listings = []
 
     while True:
@@ -49,16 +46,16 @@ def check_for_new_listings():
         # Vergelijk met de vorige lijst
         new_entries = set(current_listings) - set(previous_listings)
 
-
         if new_entries:
             for new_entry in new_entries:
-                send_telegram_message(f"Nieuwe woning gevonden: {new_entry}")
+                await send_telegram_message(f"Nieuwe woning gevonden: {new_entry}")
         
         # Update de vorige lijst
         previous_listings = current_listings
 
-        # Wacht 10 minuten voordat je opnieuw controleert
-        time.sleep(30)  # 600 seconden = 10 minuten
+        # Wacht 30 seconden voordat je opnieuw controleert (in plaats van 10 minuten)
+        await asyncio.sleep(30)
 
+# Start de asynchrone event loop
 if __name__ == "__main__":
-    check_for_new_listings()
+    asyncio.run(check_for_new_listings())
